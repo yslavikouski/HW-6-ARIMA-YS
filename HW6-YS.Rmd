@@ -1,0 +1,70 @@
+---
+title: "HW6-YS"
+author: "Yara Slav"
+date: "2023-11-21"
+output: html_document
+---
+
+
+```{r}
+library(fpp)
+library(fpp2)
+library(TTR)
+
+library(readxl)
+HW_3_Time_Series_Data_CPI_BLR_YS <- read_excel("C:/Users/pro10/Downloads/HW-3-Time Series Data-CPI(BLR)-YS.xlsx")
+
+#Assign data
+CPI <- HW_3_Time_Series_Data_CPI_BLR_YS
+
+# clean data of NAs (looked up functions)
+CPI <- na.omit(CPI)
+
+#change columns and rows
+CPI2 <- as.data.frame(t(CPI))
+
+#make dataset look a bit nicer
+CPI2 <- CPI2[-1,]
+rownames(CPI2) <- NULL
+colnames(CPI2) <- c('Date','DRef','Index')
+
+### also now looking at the table I think I don't really need Index Reference date column because the reference is always the same - 2022M12 so I will delete this column
+CPI2 <- CPI2[,-2]
+
+
+#Now change chr to factor and num for index
+str(CPI2)
+CPI2$Date <- as.factor(CPI2$Date)
+CPI2$Index <- as.numeric(CPI2$Index)
+str(CPI2)
+
+
+#convert to ts for decomposition
+CPIts <- ts(CPI2, start=2018, end=2023, frequency = 12)
+View(CPIts)
+
+
+#ARIMA
+plot(CPI2)
+
+arima_fit <- auto.arima(CPIts[,2])
+arima_fit
+
+#explaining output
+#auto arima gives us (1,1,0) model which means that it is a first-order autoregressive model with first-order differencing and no moving average; We have low coefficients on ar1 and drift (0.39 and 0.54); Standard error values are low but not very low; Variance of the residuals (errors) is 0.58 which is roughly 58%;The log likelihood is a measure of how well the model explains the observed data. In this case, the log likelihood is -67.77.The positive drift term (0.5432) suggests a general increasing trend over time. The model seems to be providing a reasonable fit to the data; The standard errors are relatively small, indicating relatively precise parameter estimates. Overall the model is reasonable
+
+#Residual analysis
+Acf(arima_fit$residuals)
+plot.ts(residuals(arima_fit))
+hist(arima_fit$residuals)
+tsdiag(arima_fit)
+
+#forecasts and accuracy
+arima_forecast <- forecast(arima_fit, h = 5)
+plot(arima_forecast)
+accuracy(arima_forecast)
+
+#This forecast seems to be very accurate because all error values are extremely low.
+
+
+```
